@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: fct_daily_sales
+    description: "Daily sales fact table with 7-day moving average revenue."
+    columns:
+      - name: sales_date
+        tests: [not_null, unique]
+      - name: total_revenue
+        tests: [not_null]
+
+  - name: dim_customers
+    description: "Customer dimension with lifetime value tiers."
+    columns:
+      - name: customer_id
+        tests: [not_null, unique]
+      - name: ltv_tier
+        tests:
+          - accepted_values:
+              values: ["Platinum", "Gold", "Silver", "Bronze"]

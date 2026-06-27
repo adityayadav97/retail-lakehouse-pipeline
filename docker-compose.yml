@@ -1,0 +1,48 @@
+# Minimal Airflow stack to run the lakehouse pipeline locally.
+# For a full demo: `docker compose up -d` then open http://localhost:8080
+version: "3.8"
+
+x-airflow-common: &airflow-common
+  image: apache/airflow:2.8.1-python3.10
+  environment: &airflow-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    PIP_ADDITIONAL_REQUIREMENTS: "pyspark==3.5.1 delta-spark==3.1.0 dbt-core==1.7.9 dbt-duckdb==1.7.4"
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./:/opt/project
+  depends_on:
+    - postgres
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - airflow db migrate && airflow users create --username admin --password admin --firstname Aditya --lastname Yadav --role Admin --email admin@example.com
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8080:8080"
+    restart: always
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    restart: always
+
+volumes:
+  pgdata:
