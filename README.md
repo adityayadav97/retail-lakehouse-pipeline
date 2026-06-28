@@ -1,100 +1,99 @@
-# 🛒 Retail Lakehouse Pipeline
+# \U0001F6D2 Retail Lakehouse Pipeline
 
-> An end-to-end, production-style **batch data lakehouse** that ingests raw retail data, processes it through a **Medallion architecture (Bronze → Silver → Gold)** using **PySpark + Delta Lake**, models analytics marts with **dbt**, and orchestrates everything with **Apache Airflow** — with built-in **data quality checks** at every layer.
+> An end-to-end, production-style **batch data lakehouse** that ingests **1M+ retail records**, processes them through a **Medallion architecture (Bronze \u2192 Silver \u2192 Gold)** using **PySpark + Delta Lake**, models analytics marts with **dbt**, and orchestrates everything with **Apache Airflow** \u2014 guarded by **15+ automated data-quality checks** across every layer.
 
-<p align="left">
-  <img alt="Python" src="https://img.shields.io/badge/Python-3.10-3776AB?logo=python&logoColor=white">
-  <img alt="Apache Spark" src="https://img.shields.io/badge/Apache%20Spark-3.5-E25A1C?logo=apachespark&logoColor=white">
-  <img alt="Delta Lake" src="https://img.shields.io/badge/Delta%20Lake-3.1-00ADD4">
-  <img alt="dbt" src="https://img.shields.io/badge/dbt-1.7-FF694B?logo=dbt&logoColor=white">
-  <img alt="Airflow" src="https://img.shields.io/badge/Apache%20Airflow-2.8-017CEE?logo=apacheairflow&logoColor=white">
-  <img alt="Docker" src="https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white">
-  <img alt="License" src="https://img.shields.io/badge/License-MIT-green">
-</p>
+`Python` \u00b7 `Apache Spark` \u00b7 `Delta Lake` \u00b7 `dbt` \u00b7 `Airflow` \u00b7 `Docker` \u00b7 `MIT License`
 
 ---
 
-## 📌 Why this project
+## \U0001F4CC Why this project
 
-This repository demonstrates how a real production data platform is built and operated — the same patterns I use day-to-day migrating and building pipelines at enterprise scale (Expedia, Atlassian, adidas).
+This repository demonstrates how a real production data platform is built and operated \u2014 the same patterns I use day-to-day building and migrating pipelines at enterprise scale (Expedia, Atlassian, Adidas).
 
-It is **runnable end-to-end on a laptop** via Docker, yet mirrors how teams build on AWS EMR + S3 + Databricks in production.
+It is **runnable end-to-end on a laptop** via Docker, yet mirrors how teams build on AWS EMR + S3 + Databricks in production. The sample generator produces **1M+ records** by default so the pipeline exercises genuine Spark/Delta scale.
 
 ---
 
-## 🏗️ Architecture
+## \u2699\uFE0F Scale & Performance
+
+| Aspect | Value |
+| --- | --- |
+| Records processed | **1M+** (1,000,000 orders + 50,000 customers + 2,000 products) |
+| Layers | Bronze \u2192 Silver \u2192 Gold (Delta Lake) |
+| Data-quality gates | **15+ automated checks** across all layer transitions |
+| Idempotency | Re-runnable without duplicates (Delta MERGE) |
+| Run anywhere | Local laptop (Docker) or AWS EMR + S3 |
+
+> Quick smoke run (fewer rows): `python data/generate_sample_data.py --orders 20000 --customers 1000`
+
+---
+
+## \U0001F3D7\uFE0F Architecture
 
 ```
-                 ┌─────────────────────────────────────────────────────────────┐
-                 │                     APACHE AIRFLOW (orchestration)            │
-                 │   ingest → quality → silver → quality → gold → dbt → publish  │
-                 └─────────────────────────────────────────────────────────────┘
-                                │              │              │
-        raw CSV / JSON          ▼              ▼              ▼
-   ┌──────────────┐      ┌────────────┐  ┌────────────┐  ┌────────────┐      ┌──────────────┐
-   │  Source data │ ───▶ │   BRONZE   │ ─▶│   SILVER   │ ─▶│    GOLD    │ ───▶ │  dbt marts   │
-   │ orders, users│      │  (raw, as- │  │ (cleaned,  │  │ (business  │      │ fct_/dim_    │
-   │  products    │      │   is Delta)│  │ conformed) │  │ aggregates)│      │  analytics   │
-   └──────────────┘      └────────────┘  └────────────┘  └────────────┘      └──────────────┘
-                                │              │              │
-                                └──────── Data Quality gates (row counts, nulls, dupes, schema) ───────┘
+                 \u250C\u2500 APACHE AIRFLOW (orchestration) \u2500\u2510
+                 \u2502 ingest \u2192 quality \u2192 silver \u2192 quality \u2192 gold \u2192 dbt \u2192 publish
+                 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518
+
+  raw CSV/JSON \u2192 BRONZE (raw Delta) \u2192 SILVER (clean/conform) \u2192 GOLD (aggregates) \u2192 dbt marts
+                       \u2514\u2500\u2500 Data-quality gates at every hop (counts, nulls, dupes, schema, ranges, RI) \u2500\u2500\u2518
 ```
 
 **Medallion layers**
 
 | Layer | Purpose | Tech |
-|-------|---------|------|
-| 🥉 Bronze | Raw ingestion, schema-on-read, append-only history | PySpark + Delta |
-| 🥈 Silver | Cleaned, deduplicated, type-cast, conformed | PySpark + Delta |
-| 🥇 Gold | Business-level aggregates and KPIs | PySpark + Delta |
-| 📊 Marts | Analytics-ready dimensional models | dbt |
+| --- | --- | --- |
+| \U0001F949 Bronze | Raw ingestion, schema-on-read, append-only history | PySpark + Delta |
+| \U0001F948 Silver | Cleaned, deduplicated, type-cast, conformed | PySpark + Delta |
+| \U0001F947 Gold | Business-level aggregates and KPIs | PySpark + Delta |
+| \U0001F4CA Marts | Analytics-ready dimensional models | dbt |
 
 ---
 
-## 🧰 Tech Stack
+## \U0001F9F0 Tech Stack
 
-- **Processing:** Apache Spark 3.5 (PySpark)
-- **Storage Format:** Delta Lake (ACID, time travel, schema enforcement)
-- **Transformation/Modeling:** dbt (staging → marts)
-- **Orchestration:** Apache Airflow 2.8
-- **Data Quality:** Custom validation framework (counts, null checks, duplicate checks, schema validation, delta-threshold checks)
-- **Local Infra:** Docker Compose
-- **Language:** Python 3.10, SQL
+* **Processing:** Apache Spark 3.5 (PySpark)
+* **Storage Format:** Delta Lake (ACID, time travel, schema enforcement)
+* **Transformation/Modeling:** dbt (staging \u2192 marts)
+* **Orchestration:** Apache Airflow 2.8
+* **Data Quality:** Custom framework \u2014 15+ checks across layers
+* **Local Infra:** Docker Compose
+* **Language:** Python 3.10, SQL
 
 ---
 
-## 📂 Project Structure
+## \U0001F4C2 Project Structure
 
 ```
 retail-lakehouse-pipeline/
-├── dags/
-│   └── retail_pipeline_dag.py        # Airflow DAG orchestrating the full pipeline
-├── src/
-│   ├── config.py                     # Central config (paths, layer names)
-│   ├── ingestion/bronze_ingest.py    # Raw → Bronze (Delta)
-│   ├── transform/silver_transform.py # Bronze → Silver (clean/dedupe/conform)
-│   ├── transform/gold_aggregate.py   # Silver → Gold (KPIs/aggregates)
-│   └── quality/data_quality.py       # Reusable data quality framework
-├── dbt/
-│   ├── dbt_project.yml
-│   ├── profiles.yml
-│   └── models/
-│       ├── staging/stg_orders.sql
-│       ├── marts/fct_daily_sales.sql
-│       └── marts/dim_customers.sql
-├── data/
-│   └── generate_sample_data.py       # Generates realistic sample retail data
-├── tests/
-│   └── test_transforms.py            # Unit tests for transformations
-├── docker-compose.yml
-├── requirements.txt
-├── Makefile
-└── README.md
+\u251C\u2500\u2500 dags/
+\u2502   \u2514\u2500\u2500 retail_pipeline_dag.py        # Airflow DAG orchestrating the full pipeline
+\u251C\u2500\u2500 src/
+\u2502   \u251C\u2500\u2500 config.py                     # Central config (paths, layer names)
+\u2502   \u251C\u2500\u2500 ingestion/bronze_ingest.py    # Raw \u2192 Bronze (Delta)
+\u2502   \u251C\u2500\u2500 transform/silver_transform.py # Bronze \u2192 Silver (clean/dedupe/conform)
+\u2502   \u251C\u2500\u2500 transform/gold_aggregate.py   # Silver \u2192 Gold (KPIs/aggregates)
+\u2502   \u2514\u2500\u2500 quality/data_quality.py       # Reusable data quality framework (15+ checks)
+\u251C\u2500\u2500 dbt/
+\u2502   \u251C\u2500\u2500 dbt_project.yml
+\u2502   \u251C\u2500\u2500 profiles.yml
+\u2502   \u2514\u2500\u2500 models/
+\u2502       \u251C\u2500\u2500 staging/stg_orders.sql
+\u2502       \u251C\u2500\u2500 marts/fct_daily_sales.sql
+\u2502       \u2514\u2500\u2500 marts/dim_customers.sql
+\u251C\u2500\u2500 data/
+\u2502   \u2514\u2500\u2500 generate_sample_data.py       # Generates 1M+ rows of realistic retail data
+\u251C\u2500\u2500 tests/
+\u2502   \u2514\u2500\u2500 test_transforms.py            # Unit tests for transformations
+\u251C\u2500\u2500 docker-compose.yml
+\u251C\u2500\u2500 requirements.txt
+\u251C\u2500\u2500 Makefile
+\u2514\u2500\u2500 README.md
 ```
 
 ---
 
-## 🚀 Quick Start
+## \U0001F680 Quick Start
 
 ```bash
 # 1. Clone
@@ -104,8 +103,9 @@ cd retail-lakehouse-pipeline
 # 2. Install dependencies
 pip install -r requirements.txt
 
-# 3. Generate sample data
-python data/generate_sample_data.py
+# 3. Generate sample data (1M+ rows by default; use flags for a quick run)
+python data/generate_sample_data.py                 # full 1M+ dataset
+python data/generate_sample_data.py --orders 20000  # fast smoke run
 
 # 4. Run the full pipeline locally (no Airflow needed)
 make run-local
@@ -118,30 +118,35 @@ docker compose up -d
 
 ---
 
-## 🔍 Data Quality Framework
+## \U0001F50D Data Quality Framework (15+ checks)
 
-Every layer transition passes through automated gates before data is promoted:
+Every layer transition passes through automated gates before data is promoted. The reusable framework in `src/quality/data_quality.py` provides:
 
-- ✅ **Row count reconciliation** — source vs target counts within threshold
-- ✅ **Null checks** — critical columns must not be null
-- ✅ **Duplicate checks** — primary keys must be unique
-- ✅ **Schema validation** — expected columns and types present
-- ✅ **Delta-threshold check** — row variance between runs stays within acceptable %
+* \u2705 **Row count / not-empty** \u2014 each dataset must contain rows
+* \u2705 **Null checks** \u2014 critical columns must not be null (configurable threshold)
+* \u2705 **Duplicate checks** \u2014 primary keys must be unique
+* \u2705 **Schema validation** \u2014 expected columns and types present
+* \u2705 **Range checks** \u2014 numeric values within valid bounds (e.g. price, quantity)
+* \u2705 **Positive-value checks** \u2014 quantity / price must be > 0
+* \u2705 **Accepted-values checks** \u2014 categoricals (region, category) within allowed set
+* \u2705 **Referential integrity** \u2014 orders reference valid customers & products (no orphans)
+* \u2705 **Freshness checks** \u2014 latest timestamp within an allowed age
+* \u2705 **Delta-threshold reconciliation** \u2014 source vs target row variance within %
 
-If a gate fails, the pipeline stops and surfaces the exact failing rule — preventing bad data from reaching analytics consumers.
+Applied across **Bronze \u2192 Silver \u2192 Gold**, the pipeline runs **15+ individual check invocations** per end-to-end run. If a gate fails, the pipeline stops and surfaces the exact failing rule \u2014 preventing bad data from reaching analytics consumers.
 
 ---
 
-## 📊 Sample Output (Gold / Marts)
+## \U0001F4CA Sample Output (Gold / Marts)
 
 | metric | value |
-|--------|-------|
-| `fct_daily_sales` | daily revenue, orders, AOV per region |
-| `dim_customers` | enriched customer dimension with lifetime value |
+| --- | --- |
+| fct_daily_sales | daily revenue, orders, AOV per region |
+| dim_customers | enriched customer dimension with lifetime value |
 
 ---
 
-## 🧪 Testing
+## \U0001F9EA Testing
 
 ```bash
 pytest tests/ -v
@@ -149,15 +154,15 @@ pytest tests/ -v
 
 ---
 
-## 💡 Key Engineering Decisions
+## \U0001F4A1 Key Engineering Decisions
 
-- **Delta Lake over plain Parquet** — enables ACID `MERGE`/`UPDATE`/`DELETE`, schema enforcement, and time travel for safe reprocessing.
-- **Medallion architecture** — clean separation of raw, conformed, and business layers makes debugging and reprocessing trivial.
-- **Idempotent writes** — each layer can be safely re-run without producing duplicates.
-- **Quality gates as first-class steps** — data quality is enforced in the pipeline, not checked after the fact.
+* **Delta Lake over plain Parquet** \u2014 enables ACID `MERGE`/`UPDATE`/`DELETE`, schema enforcement, and time travel for safe reprocessing.
+* **Medallion architecture** \u2014 clean separation of raw, conformed, and business layers makes debugging and reprocessing trivial.
+* **Idempotent writes** \u2014 each layer can be safely re-run without producing duplicates.
+* **Quality gates as first-class steps** \u2014 data quality is enforced in the pipeline, not checked after the fact.
 
 ---
 
-## 📜 License
+## \U0001F4DC License
 
-MIT © Aditya Yadav
+MIT \u00a9 Aditya Yadav
